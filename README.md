@@ -94,4 +94,4 @@ src/
 
 ## 👨‍💻 Author
 
-Made with ❤️ using React JS
+Made with ❤️ by prahladembedx
