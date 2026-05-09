@@ -5,7 +5,7 @@ import WeatherEffects from './components/WeatherEffects';
 import SkeletonLoader from './components/SkeletonLoader';
 import { translations } from './translations/translations';
 
-const API_KEY = "82c824e33f6cf882222b69559e9db659"; // 🔑 
+const API_KEY = process.env.REACT_APP_WEATHER_API_KEY; // 🔑 
 
 export default function App() {
   const [city, setCity] = useState('');
