@@ -191,7 +191,7 @@ export default function App() {
       {/* Header */}
       <header className="header">
         <div className="header-left">
-          <h1 className="app-title">⛅ {t.appTitle}</h1>
+          <h1 className="app-title">⛅SkyCast</h1>
         </div>
         <div className="header-controls">
           <button className="lang-btn" onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}>
