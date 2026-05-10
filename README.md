@@ -126,7 +126,10 @@ App will open at `http://localhost:3000` 🎉
 
 ## 📸 Screenshots
 
-> Coming Soon
+![Home Screen](public/Screenshot1.png)
+![Sunny Particles](public/Screenshot2.png)
+![Charts](public/Screenshot3.png)
+![Map](public/Screenshot4.png)
 
 ---
 
