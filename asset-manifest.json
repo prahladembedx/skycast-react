@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/skycast-react/static/css/main.fe62d067.css",
+    "main.js": "/skycast-react/static/js/main.e59628b5.js",
+    "index.html": "/skycast-react/index.html",
+    "main.fe62d067.css.map": "/skycast-react/static/css/main.fe62d067.css.map",
+    "main.e59628b5.js.map": "/skycast-react/static/js/main.e59628b5.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.fe62d067.css",
+    "static/js/main.e59628b5.js"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "short_name": "SkyCast",
+  "name": "SkyCast Weather by Prahladembedx",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#e94560",
+  "background_color": "#0d1117",
+  "description": "A feature-rich weather app with forecasts, charts, voice search and more!"
+}
