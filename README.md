@@ -5,9 +5,7 @@ A feature-rich, modern weather application built with **React.js** that provides
 ---
 
 ## 🌐 Live Demo
-
-> Coming soon
-
+👉 [SkyCast - Live](https://prahladembedx.github.io/skycast-react/)
 ---
 
 ## ✨ Features
