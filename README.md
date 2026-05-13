@@ -141,10 +141,13 @@ App will open at `http://localhost:3000` 🎉
 
 ## 🔮 Future Plans
 
-- [ ] Push Notifications for severe weather alerts
-- [ ] Weather history graph
-- [ ] Share weather card on social media
-- [ ] More language support
+- [ ] 🌫️ Air Quality Index (AQI)
+- [ ] 📈 Monthly Climate Statistics
+- [ ] 🌞 UV Index
+- [ ] 🌊 Pollen Index
+- [ ] 🚨 Severe Weather Alerts
+- [ ] 🌍 Globe View
+- [ ] 🏥 Health Features
 
 ---
 
@@ -162,7 +165,7 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 <div align="center">
 
-Made with ❤️ by **prahladembedx**
+© PrahladEmbedX---All Rights Reserved.
 
 ⭐ Star this repo if you found it helpful!
 
