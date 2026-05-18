@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/skycast-react/static/css/main.d86d383d.css",
-    "main.js": "/skycast-react/static/js/main.9fca8057.js",
+    "main.js": "/skycast-react/static/js/main.9bbb65ef.js",
     "index.html": "/skycast-react/index.html",
     "main.d86d383d.css.map": "/skycast-react/static/css/main.d86d383d.css.map",
-    "main.9fca8057.js.map": "/skycast-react/static/js/main.9fca8057.js.map"
+    "main.9bbb65ef.js.map": "/skycast-react/static/js/main.9bbb65ef.js.map"
   },
   "entrypoints": [
     "static/css/main.d86d383d.css",
-    "static/js/main.9fca8057.js"
+    "static/js/main.9bbb65ef.js"
   ]
 }
