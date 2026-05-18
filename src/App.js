@@ -41,18 +41,22 @@ export default function App() {
   }, []);
 
   const fetchByCoords = async (lat, lon) => {
-    setLoading(true); setError('');
-    try {
-      const [wRes, fRes] = await Promise.all([
-        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`),
-        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
-      ]);
-      const wData = await wRes.json();
-      const fData = await fRes.json();
-      if (wData.cod === 200) { setWeather(wData); processForecasts(fData.list); }
-    } catch { setError('Something went wrong!'); }
-    setLoading(false);
-  };
+  setLoading(true); setError('');
+  try {
+    const [wRes, fRes] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
+    ]);
+    const wData = await wRes.json();
+    const fData = await fRes.json();
+    if (wData.cod === 200) {
+      setWeather(wData);
+      processForecasts(fData.list);
+      localStorage.setItem('lastCity', wData.name);
+    }
+  } catch { setError('Something went wrong!'); }
+  setLoading(false);
+};
 
   const fetchWeather = async (searchCity = city) => {
     if (!searchCity.trim()) return;
