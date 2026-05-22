@@ -163,9 +163,27 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 ---
 
-<div align="center">
+Copyright (c) 2026 prahladembedx. All Rights Reserved.
 
-© PrahladEmbedX---All Rights Reserved.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This project is publicly visible for inspiration and
+learning purposes only. Copying, redistribution, or
+commercial use of this project without written permission
+from the author is not allowed.
+
+If you'd like to collaborate or have any questions,
+feel free to reach out! 🙂
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GitHub  : https://github.com/prahladembedx
+Project : https://prahladembedx.github.io/skycast-react/
+
+        "Built with passion, protected with purpose."
+                AUTHOR : prahladembedx
+
+<div align="center">
 
 ⭐ Star this repo if you found it helpful!
 
