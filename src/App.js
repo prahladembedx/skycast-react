@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import './App.css';
 import WeatherEffects from './components/WeatherEffects';
 import SkeletonLoader from './components/SkeletonLoader';
 import ShareCard from './components/ShareCard';
+import AQICard from './components/AQICard';
+import UVCard, { estimateUV } from './components/UVCard';
+import PollenCard from './components/PollenCard';
+import WeatherAlerts, { generateAlerts } from './components/WeatherAlerts';
+import GlobeView from './components/GlobeView';
+import ClimateStats from './components/ClimateStats';
 import { translations } from './translations/translations';
 
 const API_KEY = process.env.REACT_APP_WEATHER_API_KEY;
@@ -13,6 +19,8 @@ export default function App() {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
   const [hourly, setHourly] = useState([]);
+  const [aqi, setAqi] = useState(null);
+  const [aqiComponents, setAqiComponents] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
@@ -31,32 +39,48 @@ export default function App() {
     { code: 'ta', label: '🇮🇳 TA' },
   ];
 
-  // Auto detect location
   useEffect(() => {
+    const lastCity = localStorage.getItem('lastCity');
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        await fetchByCoords(pos.coords.latitude, pos.coords.longitude);
-      });
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => { await fetchByCoords(pos.coords.latitude, pos.coords.longitude); },
+        () => { if (lastCity) fetchWeather(lastCity); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      if (lastCity) fetchWeather(lastCity);
     }
   }, []);
 
+  const fetchAQI = async (lat, lon) => {
+    try {
+      const res = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
+      const data = await res.json();
+      if (data.list?.length > 0) {
+        setAqi(data.list[0].main.aqi);
+        setAqiComponents(data.list[0].components);
+      }
+    } catch { console.log('AQI fetch failed'); }
+  };
+
   const fetchByCoords = async (lat, lon) => {
-  setLoading(true); setError('');
-  try {
-    const [wRes, fRes] = await Promise.all([
-      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`),
-      fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
-    ]);
-    const wData = await wRes.json();
-    const fData = await fRes.json();
-    if (wData.cod === 200) {
-      setWeather(wData);
-      processForecasts(fData.list);
-      localStorage.setItem('lastCity', wData.name);
-    }
-  } catch { setError('Something went wrong!'); }
-  setLoading(false);
-};
+    setLoading(true); setError('');
+    try {
+      const [wRes, fRes] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
+      ]);
+      const wData = await wRes.json();
+      const fData = await fRes.json();
+      if (wData.cod === 200) {
+        setWeather(wData);
+        processForecasts(fData.list);
+        fetchAQI(lat, lon);
+        localStorage.setItem('lastCity', wData.name);
+      }
+    } catch { setError('Something went wrong!'); }
+    setLoading(false);
+  };
 
   const fetchWeather = async (searchCity = city) => {
     if (!searchCity.trim()) return;
@@ -69,16 +93,15 @@ export default function App() {
       const wData = await wRes.json();
       const fData = await fRes.json();
       if (wData.cod !== 200) {
-        setError(t.cityNotFound); setWeather(null); setForecast([]); setHourly([]);
+        setError(t.cityNotFound); setWeather(null); setForecast([]); setHourly([]); setAqi(null);
       } else {
         setWeather(wData);
         processForecasts(fData.list);
-        // Save to search history
+        fetchAQI(wData.coord.lat, wData.coord.lon);
         const newEntry = { city: wData.name, temp: Math.round(wData.main.temp), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
         const updated = [newEntry, ...searchHistory.filter(h => h.city !== wData.name)].slice(0, 6);
         setSearchHistory(updated);
         localStorage.setItem('searchHistory', JSON.stringify(updated));
-        // Send push notification if enabled
         if (notifEnabled && Notification.permission === 'granted') {
           new Notification(`SkyCast — ${wData.name}`, {
             body: `🌡️ ${Math.round(wData.main.temp)}°C | ${wData.weather[0].description}`,
@@ -95,20 +118,16 @@ export default function App() {
     setHourly(list.slice(0, 8));
   };
 
-  // Push Notifications
   const toggleNotifications = async () => {
-    if (!('Notification' in window)) { alert('Notifications not supported!'); return; }
-    if (Notification.permission === 'granted') {
-      setNotifEnabled(!notifEnabled);
-      if (!notifEnabled) alert(t.notifEnabled);
-    } else {
+    if (!('Notification' in window)) { alert('Not supported!'); return; }
+    if (Notification.permission === 'granted') { setNotifEnabled(!notifEnabled); }
+    else {
       const perm = await Notification.requestPermission();
       if (perm === 'granted') { setNotifEnabled(true); alert(t.notifEnabled); }
       else { alert(t.notifDenied); }
     }
   };
 
-  // Voice Search
   const startVoiceSearch = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { alert('Voice search not supported!'); return; }
@@ -124,16 +143,12 @@ export default function App() {
     recognition.onend = () => setListening(false);
   };
 
-  // Favorites
   const toggleFavorite = (cityName) => {
-    const updated = favorites.includes(cityName)
-      ? favorites.filter(c => c !== cityName)
-      : [...favorites, cityName];
+    const updated = favorites.includes(cityName) ? favorites.filter(c => c !== cityName) : [...favorites, cityName];
     setFavorites(updated);
     localStorage.setItem('favCities', JSON.stringify(updated));
   };
 
-  // AI Suggestions
   const getAISuggestions = () => {
     if (!weather) return [];
     const temp = weather.main.temp;
@@ -155,12 +170,12 @@ export default function App() {
     if (!weather) return darkMode ? 'linear-gradient(135deg, #0d1117 0%, #161b22 100%)' : 'linear-gradient(135deg, #e8f4fd 0%, #d1e8f5 100%)';
     const main = weather.weather[0].main.toLowerCase();
     const gradients = {
-      dark: { rain: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)', drizzle: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)', clear: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', clouds: 'linear-gradient(135deg, #232526, #414345)', snow: 'linear-gradient(135deg, #1a1a2e, #2c3e6b)', thunderstorm: 'linear-gradient(135deg, #0d0d0d, #1a0a2e)' },
-      light: { rain: 'linear-gradient(135deg, #4a6fa5, #7f8c8d)', drizzle: 'linear-gradient(135deg, #4a6fa5, #7f8c8d)', clear: 'linear-gradient(135deg, #f7971e, #ffd200)', clouds: 'linear-gradient(135deg, #bdc3c7, #95a5a6)', snow: 'linear-gradient(135deg, #e0eafc, #cfdef3)', thunderstorm: 'linear-gradient(135deg, #4b4b4b, #2c2c2c)' }
+      dark: { rain: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', drizzle: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', clear: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', clouds: 'linear-gradient(135deg,#232526,#414345)', snow: 'linear-gradient(135deg,#1a1a2e,#2c3e6b)', thunderstorm: 'linear-gradient(135deg,#0d0d0d,#1a0a2e)' },
+      light: { rain: 'linear-gradient(135deg,#4a6fa5,#7f8c8d)', drizzle: 'linear-gradient(135deg,#4a6fa5,#7f8c8d)', clear: 'linear-gradient(135deg,#f7971e,#ffd200)', clouds: 'linear-gradient(135deg,#bdc3c7,#95a5a6)', snow: 'linear-gradient(135deg,#e0eafc,#cfdef3)', thunderstorm: 'linear-gradient(135deg,#4b4b4b,#2c2c2c)' }
     };
     const theme = darkMode ? gradients.dark : gradients.light;
     for (const key of Object.keys(theme)) { if (main.includes(key)) return theme[key]; }
-    return darkMode ? 'linear-gradient(135deg, #0d1117, #161b22)' : 'linear-gradient(135deg, #e8f4fd, #d1e8f5)';
+    return darkMode ? 'linear-gradient(135deg,#0d1117,#161b22)' : 'linear-gradient(135deg,#e8f4fd,#d1e8f5)';
   };
 
   const formatTime = (dt) => new Date(dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -173,6 +188,16 @@ export default function App() {
   const chartData = hourly.map(h => ({ time: formatHour(h.dt), temp: Math.round(h.main.temp), humidity: h.main.humidity }));
   const historyChartData = searchHistory.map(h => ({ city: h.city, temp: h.temp }));
   const suggestions = getAISuggestions();
+  const alerts = weather ? generateAlerts(weather) : [];
+  const uvIndex = weather ? estimateUV(weather) : 0;
+
+  const tabs = [
+    { id: 'today', label: `⏱️ ${t.hourly}` },
+    { id: 'forecast', label: `📅 ${t.forecast}` },
+    { id: 'health', label: `🏥 Health` },
+    { id: 'charts', label: `📈 ${t.charts}` },
+    { id: 'globe', label: `🌍 Globe` },
+  ];
 
   return (
     <div className={`app ${darkMode ? 'dark' : 'light'}`} style={{ background: getBackground() }}>
@@ -182,18 +207,20 @@ export default function App() {
       <header className="header">
         <h1 className="app-title">⛅ SkyCast</h1>
         <div className="header-controls">
-          {/* Language Selector */}
           <select className="lang-select" value={lang} onChange={e => setLang(e.target.value)}>
             {langOptions.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
           </select>
-          <button className="notif-btn" onClick={toggleNotifications} title={t.notifications}>
-            {notifEnabled ? '🔔' : '🔕'}
-          </button>
-          <button className="toggle-btn" onClick={() => setDarkMode(!darkMode)}>
-            {darkMode ? '☀️' : '🌙'}
-          </button>
+          <button className="notif-btn" onClick={toggleNotifications}>{notifEnabled ? '🔔' : '🔕'}</button>
+          <button className="toggle-btn" onClick={() => setDarkMode(!darkMode)}>{darkMode ? '☀️' : '🌙'}</button>
         </div>
       </header>
+
+      {/* Alerts Banner */}
+      {alerts.length > 0 && (
+        <div className="alerts-banner" onClick={() => setActiveTab('health')}>
+          🚨 {alerts.length} weather alert{alerts.length > 1 ? 's' : ''} — Tap to view
+        </div>
+      )}
 
       {/* Search */}
       <div className="search-section">
@@ -209,7 +236,7 @@ export default function App() {
       {/* Favorites */}
       {favorites.length > 0 && (
         <div className="favorites-bar">
-          <span className="fav-label">❤️ {t.favorites}:</span>
+          <span className="fav-label">❤️</span>
           {favorites.map(fav => (
             <button key={fav} className="fav-chip" onClick={() => { setCity(fav); fetchWeather(fav); }}>
               {fav}<span className="fav-remove" onClick={e => { e.stopPropagation(); toggleFavorite(fav); }}>✕</span>
@@ -223,18 +250,16 @@ export default function App() {
 
       {weather && !loading && (
         <div className="content">
-          {/* Main Weather Card */}
+          {/* Main Card */}
           <div className="weather-card glass">
             <div className="card-top">
               <div className="city-info">
                 <h2>{weather.name}, {weather.sys.country}</h2>
-                <p className="date">{new Date().toLocaleDateString(lang === 'hi' || lang === 'mr' ? 'hi-IN' : lang === 'ta' ? 'ta-IN' : 'en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="date">{new Date().toLocaleDateString(lang === 'ta' ? 'ta-IN' : lang === 'hi' || lang === 'mr' ? 'hi-IN' : 'en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
-              <div className="card-top-actions">
-                <button className={`fav-btn ${favorites.includes(weather.name) ? 'active' : ''}`} onClick={() => toggleFavorite(weather.name)}>
-                  {favorites.includes(weather.name) ? '❤️' : '🤍'}
-                </button>
-              </div>
+              <button className={`fav-btn ${favorites.includes(weather.name) ? 'active' : ''}`} onClick={() => toggleFavorite(weather.name)}>
+                {favorites.includes(weather.name) ? '❤️' : '🤍'}
+              </button>
             </div>
 
             <div className="main-weather">
@@ -250,7 +275,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Details Grid */}
             <div className="details-grid">
               {[
                 { icon: '💧', label: t.humidity, value: `${weather.main.humidity}%`, bar: weather.main.humidity },
@@ -261,13 +285,12 @@ export default function App() {
                 <div key={i} className="detail-item">
                   <span className="detail-icon">{d.icon}</span>
                   <span className="detail-label">{d.label}</span>
-                  {d.bar !== undefined && <div className="progress-bar"><div style={{ width: `${d.bar}%` }}></div></div>}
+                  {d.bar !== undefined && <div className="progress-bar"><div style={{ width: `${d.bar}%` }} /></div>}
                   <span className="detail-value">{d.value}</span>
                 </div>
               ))}
             </div>
 
-            {/* Sunrise Sunset */}
             <div className="sun-section">
               <div className="sun-item">
                 <span className="sun-icon">🌅</span>
@@ -286,8 +309,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Share Button */}
-            <ShareCard weather={weather} darkMode={darkMode} />
+            <ShareCard weather={weather} />
           </div>
 
           {/* AI Suggestions */}
@@ -304,9 +326,10 @@ export default function App() {
 
           {/* Tabs */}
           <div className="tabs glass">
-            {['today', 'forecast', 'charts', 'map'].map(tab => (
-              <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                {tab === 'today' ? `⏱️ ${t.hourly}` : tab === 'forecast' ? `📅 ${t.forecast}` : tab === 'charts' ? `📈 ${t.charts}` : `🗺️ ${t.map}`}
+            {tabs.map(tab => (
+              <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                {tab.label}
+                {tab.id === 'health' && alerts.length > 0 && <span className="tab-badge">{alerts.length}</span>}
               </button>
             ))}
           </div>
@@ -344,11 +367,29 @@ export default function App() {
             </div>
           )}
 
+          {/* Health Tab */}
+          {activeTab === 'health' && (
+            <div className="health-section">
+              {/* Alerts */}
+              <div className="glass" style={{ padding: '16px', marginBottom: '14px' }}>
+                <h3 style={{ marginBottom: '12px', fontSize: '1rem' }}>🚨 Weather Alerts</h3>
+                <WeatherAlerts alerts={alerts} />
+              </div>
+              {/* AQI */}
+              {aqi && <AQICard aqi={aqi} components={aqiComponents} />}
+              {/* UV + Pollen */}
+              <div className="health-grid glass">
+                <UVCard uvi={uvIndex} />
+                <PollenCard weather={weather} />
+              </div>
+            </div>
+          )}
+
           {/* Charts */}
           {activeTab === 'charts' && (
             <div className="charts-section glass">
               <h3>🌡️ {t.tempChart}</h3>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
@@ -363,42 +404,39 @@ export default function App() {
                 </AreaChart>
               </ResponsiveContainer>
 
-              <h3 style={{ marginTop: '20px' }}>💧 {t.humidityChart}</h3>
-              <ResponsiveContainer width="100%" height={180}>
+              <h3 style={{ margin: '16px 0 8px' }}>💧 {t.humidityChart}</h3>
+              <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={chartData}>
                   <XAxis dataKey="time" tick={{ fill: darkMode ? '#aaa' : '#555', fontSize: 10 }} />
                   <YAxis tick={{ fill: darkMode ? '#aaa' : '#555', fontSize: 10 }} />
                   <Tooltip contentStyle={{ background: darkMode ? '#1a1a2e' : '#fff', border: 'none', borderRadius: '10px' }} />
-                  <Bar dataKey="humidity" fill="#4fc3f7" radius={[6, 6, 0, 0]} name="Humidity %" />
+                  <Bar dataKey="humidity" fill="#4fc3f7" radius={[4, 4, 0, 0]} name="Humidity %" />
                 </BarChart>
               </ResponsiveContainer>
 
-              {/* History Chart */}
               {historyChartData.length > 1 && (
                 <>
-                  <h3 style={{ marginTop: '20px' }}>🏙️ {t.historyChart}</h3>
-                  <ResponsiveContainer width="100%" height={180}>
+                  <h3 style={{ margin: '16px 0 8px' }}>🏙️ {t.historyChart}</h3>
+                  <ResponsiveContainer width="100%" height={150}>
                     <BarChart data={historyChartData}>
                       <XAxis dataKey="city" tick={{ fill: darkMode ? '#aaa' : '#555', fontSize: 10 }} />
                       <YAxis tick={{ fill: darkMode ? '#aaa' : '#555', fontSize: 10 }} />
                       <Tooltip contentStyle={{ background: darkMode ? '#1a1a2e' : '#fff', border: 'none', borderRadius: '10px' }} />
-                      <Bar dataKey="temp" fill="#a78bfa" radius={[6, 6, 0, 0]} name="Temp °C" />
+                      <Bar dataKey="temp" fill="#a78bfa" radius={[4, 4, 0, 0]} name="Temp °C" />
                     </BarChart>
                   </ResponsiveContainer>
                 </>
               )}
+
+              {/* Monthly Climate */}
+              <ClimateStats forecast={forecast} weather={weather} />
             </div>
           )}
 
-          {/* Map */}
-          {activeTab === 'map' && (
-            <div className="map-section glass">
-              <h3>🗺️ {t.radarMap}</h3>
-              <div className="map-container">
-                <iframe title="Weather Map"
-                  src={`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${weather.coord.lat}&lon=${weather.coord.lon}&zoom=8`}
-                  style={{ width: '100%', height: '380px', border: 'none', borderRadius: '12px' }} />
-              </div>
+          {/* Globe */}
+          {activeTab === 'globe' && (
+            <div className="globe-tab glass">
+              <GlobeView lat={weather.coord.lat} lon={weather.coord.lon} cityName={weather.name} weather={weather} />
             </div>
           )}
         </div>
