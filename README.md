@@ -3,19 +3,9 @@
   <p align="center">A feature-rich, modern weather application built with <b>React.js</b> featuring real-time weather data, health insights, AI suggestions, voice search, globe view, and much more — all wrapped in a stunning glassmorphism UI with animated weather effects.</p>
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-18-blue?logo=react" />
-  <img src="https://img.shields.io/badge/PWA-Ready-green?logo=pwa" />
-  <img src="https://img.shields.io/badge/OpenWeatherMap-API-orange" />
-  <img src="https://img.shields.io/badge/License-MIT-purple" />
-  <img src="https://img.shields.io/badge/Made%20by-prahladembedx-red" />
-</p>
-
 ---
 
-## 🌐 Live Demo
-
-👉 **[https://prahladembedx.github.io/skycast-react/](https://prahladembedx.github.io/skycast-react/)**
+## 🌐 Live 👉 **[https://prahladembedx.github.io/skycast-react/](https://prahladembedx.github.io/skycast-react/)**
 
 ---
 
@@ -233,9 +223,6 @@ If you'd like to collaborate or have any questions,
 feel free to reach out! 🙂
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-GitHub  : https://github.com/prahladembedx
-Project : https://prahladembedx.github.io/skycast-react/
 
         "Built with passion, protected with purpose."
                 AUTHOR : prahladembedx
