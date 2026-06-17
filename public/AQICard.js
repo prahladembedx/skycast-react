@@ -15,7 +15,7 @@ export default function AQICard({ aqi, components, t }) {
   return (
     <div className="aqi-card glass" style={{ borderLeft: `4px solid ${level.color}` }}>
       <div className="aqi-header">
-        <h3>🌫️ Air Quality Index</h3>
+        <h3>🌫️ Air Quality Index — <span style={{ color: level.color, fontSize: '1.1rem', fontWeight: 800 }}>AQI {aqi * 50}</span></h3>
         <div className="aqi-badge" style={{ background: level.bg, color: level.color }}>
           {level.icon} {level.label}
         </div>
